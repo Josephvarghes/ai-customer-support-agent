@@ -1,0 +1,242 @@
+[
+  {
+    "customer_id": "CUST-001",
+    "name": "Alice Smith",
+    "email": "alice.smith@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1001",
+        "purchase_date": "2026-05-31",
+        "item_name": "Wireless Headphones",
+        "item_category": "electronics",
+        "item_condition": "opened",
+        "amount": 120.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-002",
+    "name": "Bob Jones",
+    "email": "bob.jones@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1002",
+        "purchase_date": "2026-06-05",
+        "item_name": "Hydrating Face Cream",
+        "item_category": "cosmetics",
+        "item_condition": "opened",
+        "amount": 45.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-003",
+    "name": "Charlie Brown",
+    "email": "charlie.brown@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1003",
+        "purchase_date": "2026-04-26",
+        "item_name": "Denim Jacket",
+        "item_category": "apparel",
+        "item_condition": "sealed",
+        "amount": 80.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-004",
+    "name": "Diana Prince",
+    "email": "diana.prince@example.com",
+    "membership_tier": "Gold",
+    "orders": [
+      {
+        "order_id": "ORD-1004",
+        "purchase_date": "2026-05-29",
+        "item_name": "Smart Watch",
+        "item_category": "electronics",
+        "item_condition": "sealed",
+        "amount": 500.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-005",
+    "name": "Evan Wright",
+    "email": "evan.wright@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1005",
+        "purchase_date": "2026-05-21",
+        "item_name": "Mechanical Keyboard",
+        "item_category": "electronics",
+        "item_condition": "sealed",
+        "amount": 250.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-006",
+    "name": "Fiona Gallagher",
+    "email": "fiona.gallagher@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1006",
+        "purchase_date": "2026-05-26",
+        "item_name": "Summer Dress",
+        "item_category": "apparel",
+        "item_condition": "opened",
+        "amount": 60.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-007",
+    "name": "George Clark",
+    "email": "george.clark@example.com",
+    "membership_tier": "Premium",
+    "orders": [
+      {
+        "order_id": "ORD-1007",
+        "purchase_date": "2026-05-16",
+        "item_name": "Organic Shampoo Set",
+        "item_category": "cosmetics",
+        "item_condition": "sealed",
+        "amount": 90.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-008",
+    "name": "Hannah Abbott",
+    "email": "hannah.abbott@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1008",
+        "purchase_date": "2026-05-01",
+        "item_name": "Matte Lipstick",
+        "item_category": "cosmetics",
+        "item_condition": "opened",
+        "amount": 35.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-009",
+    "name": "Ian Malcolm",
+    "email": "ian.malcolm@example.com",
+    "membership_tier": "Gold",
+    "orders": [
+      {
+        "order_id": "ORD-1009",
+        "purchase_date": "2026-05-27",
+        "item_name": "Leather Boots",
+        "item_category": "apparel",
+        "item_condition": "sealed",
+        "amount": 150.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-010",
+    "name": "Julia Roberts",
+    "email": "julia.roberts@example.com",
+    "membership_tier": "Premium",
+    "orders": [
+      {
+        "order_id": "ORD-1010",
+        "purchase_date": "2026-06-08",
+        "item_name": "4K Gaming Monitor",
+        "item_category": "electronics",
+        "item_condition": "opened",
+        "amount": 1200.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-011",
+    "name": "Kevin Bacon",
+    "email": "kevin.bacon@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1011",
+        "purchase_date": "2026-06-02",
+        "item_name": "Clearance Socks",
+        "item_category": "apparel",
+        "item_condition": "sealed",
+        "amount": 19.99
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-012",
+    "name": "Laura Croft",
+    "email": "laura.croft@example.com",
+    "membership_tier": "Gold",
+    "orders": [
+      {
+        "order_id": "ORD-1012",
+        "purchase_date": "2026-05-06",
+        "item_name": "Running Shoes",
+        "item_category": "apparel",
+        "item_condition": "opened",
+        "amount": 85.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-013",
+    "name": "Michael Scott",
+    "email": "michael.scott@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1013",
+        "purchase_date": "2026-05-13",
+        "item_name": "USB-C Hub",
+        "item_category": "electronics",
+        "item_condition": "sealed",
+        "amount": 150.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-014",
+    "name": "Nancy Drew",
+    "email": "nancy.drew@example.com",
+    "membership_tier": "Gold",
+    "orders": [
+      {
+        "order_id": "ORD-1014",
+        "purchase_date": "2026-05-12",
+        "item_name": "Bluetooth Speaker",
+        "item_category": "electronics",
+        "item_condition": "opened",
+        "amount": 95.00
+      }
+    ]
+  },
+  {
+    "customer_id": "CUST-015",
+    "name": "Oscar Martinez",
+    "email": "oscar.martinez@example.com",
+    "membership_tier": "Standard",
+    "orders": [
+      {
+        "order_id": "ORD-1015",
+        "purchase_date": "2026-06-02",
+        "item_name": "Graphic T-Shirt",
+        "item_category": "apparel",
+        "item_condition": "sealed",
+        "amount": 40.00
+      }
+    ]
+  }
+]
