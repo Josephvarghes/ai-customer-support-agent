@@ -2,11 +2,12 @@ import contextlib
 import json
 import logging
 from datetime import datetime
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 
 from src.agent.graph import app as agent_app
 from src.database import CRMDatabase
@@ -14,6 +15,35 @@ from src.database import CRMDatabase
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def make_serializable(obj: Any) -> Any:
+    """Recursively converts LangChain messages and other non-serializable objects
+
+    into JSON-compatible formats.
+    """
+    if isinstance(obj, list):
+        return [make_serializable(item) for item in obj]
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, BaseMessage):
+        msg_dict = {
+            "type": obj.type,
+            "content": obj.content,
+        }
+        if hasattr(obj, "name") and obj.name:
+            msg_dict["name"] = obj.name
+        if hasattr(obj, "id") and obj.id:
+            msg_dict["id"] = obj.id
+        if hasattr(obj, "tool_calls") and obj.tool_calls:
+            msg_dict["tool_calls"] = obj.tool_calls
+        return msg_dict
+    try:
+        json.dumps(obj)
+        return obj
+    except (TypeError, OverflowError):
+        return str(obj)
+
 
 # Load environment variables
 load_dotenv()
@@ -138,7 +168,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                                 "tool": event_name,
                                 "log": {
                                     "status": "completed",
-                                    "telemetry": telemetry_data,
+                                    "telemetry": make_serializable(telemetry_data),
                                 },
                             }
                         )
@@ -173,7 +203,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                                     "tool": None,
                                     "log": {
                                         "status": "node_completed",
-                                        "output": node_output,
+                                        "output": make_serializable(node_output),
                                         "timestamp": datetime.now().isoformat(),
                                     },
                                 }

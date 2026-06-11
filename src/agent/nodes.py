@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -13,30 +14,24 @@ from src.agent.tools import (
     verify_order_eligibility,
 )
 
-load_dotenv()
+# Load environment variables relative to this file's root directory
+dotenv_path = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(dotenv_path=dotenv_path, override=True)
 
-grok_api_key = os.getenv("GROK_API_KEY")
-openai_api_key = os.getenv("OPENAI_API_KEY")
+groq_api_key = os.getenv("GROQ_API_KEY")
 
-if grok_api_key:
-    llm = ChatOpenAI(
-        model="grok-beta",
-        openai_api_key=grok_api_key,
-        openai_api_base="https://api.x.ai/v1",
-        temperature=0,
+if not groq_api_key:
+    raise ValueError(
+        "GROQ_API_KEY is missing or empty. Please ensure your .env file "
+        "contains 'GROQ_API_KEY=your_key' and is saved to disk."
     )
-elif openai_api_key:
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        openai_api_key=openai_api_key,
-        temperature=0,
-    )
-else:
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        openai_api_key="mock_key",
-        temperature=0,
-    )
+
+llm = ChatOpenAI(
+    model="llama-3.3-70b-versatile",
+    openai_api_key=groq_api_key,
+    openai_api_base="https://api.groq.com/openai/v1",
+    temperature=0,
+)
 
 tools = [
     lookup_customer_profile,
