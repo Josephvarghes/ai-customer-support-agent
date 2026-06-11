@@ -1,3 +1,4 @@
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
 from src.agent.nodes import call_llm_agent, execute_tools, finalize_decision
@@ -69,5 +70,6 @@ workflow.add_conditional_edges(
 
 workflow.add_edge("finalize_decision", END)
 
-# Compile graph
-app = workflow.compile()
+# Compile graph with checkpointer
+checkpointer = MemorySaver()
+app = workflow.compile(checkpointer=checkpointer)
