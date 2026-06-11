@@ -522,10 +522,10 @@ export default function App() {
       </header>
 
       {/* DASHBOARD SPLIT-PANEL LAYOUT */}
-      <main className="flex flex-1 flex-col md:flex-row min-h-0 overflow-hidden relative">
+      <main className="flex flex-1 flex-row min-h-0 overflow-hidden relative">
 
         {/* LEFT PANEL: CUSTOMER INTERFACE */}
-        <section className="flex flex-col flex-1 border-r border-slate-800 bg-slate-950/40 relative min-h-0">
+        <section className="flex flex-col flex-1 border-r border-slate-800 bg-slate-950/40 relative min-h-0 w-1/2 min-w-0">
 
           {/* PANEL HEADER */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-slate-900 bg-slate-900/10 shrink-0">
@@ -670,7 +670,7 @@ export default function App() {
         </section>
 
         {/* RIGHT PANEL: LIVE TELEMETRY & REASONING LOGS */}
-        <section className="flex flex-col flex-1 bg-slate-950/60 min-h-0">
+        <section className="flex flex-col flex-1 bg-slate-950/60 min-h-0 w-1/2 min-w-0">
 
           {/* PANEL HEADER */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-slate-900 bg-slate-900/10 shrink-0">
