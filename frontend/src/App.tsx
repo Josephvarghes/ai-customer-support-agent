@@ -79,7 +79,6 @@ export default function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [showCrmDrawer, setShowCrmDrawer] = useState(false);
   const [crmProfiles, setCrmProfiles] = useState<CustomerProfile[]>([]);
 
@@ -89,10 +88,10 @@ export default function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const recordingIntervalRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const audioPlaybackRef = useRef<HTMLAudioElement | null>(null);
+  const tempUserMsgIdRef = useRef<string>('');
 
   // Fetch CRM profiles on mount
   useEffect(() => {
@@ -154,6 +153,45 @@ export default function App() {
 
       try {
         const data = JSON.parse(event.data);
+
+        // Handle user transcription chunk from STT
+        if (data.type === 'user-transcript-chunk') {
+          const currentId = tempUserMsgIdRef.current;
+          if (currentId) {
+            setMessages((prev) => {
+              return prev.map((msg) => {
+                if (msg.id === currentId) {
+                  return {
+                    ...msg,
+                    text: msg.text ? msg.text + ' ' + data.content : data.content
+                  };
+                }
+                return msg;
+              });
+            });
+          }
+        }
+
+        // Handle user transcription final from STT
+        if (data.type === 'user-transcript-final') {
+          const currentId = tempUserMsgIdRef.current;
+          if (currentId) {
+            setMessages((prev) => {
+              return prev.map((msg) => {
+                if (msg.id === currentId) {
+                  return {
+                    ...msg,
+                    text: data.content,
+                    isStreaming: false
+                  };
+                }
+                return msg;
+              }).filter((msg) => msg.sender !== 'user' || msg.text.trim() !== '');
+            });
+            tempUserMsgIdRef.current = '';
+          }
+          setIsThinking(true);
+        }
 
         // 1. Handle incoming text streaming tokens
         if (data.type === 'token') {
@@ -370,7 +408,6 @@ export default function App() {
 
       // 2. Send control message to backend to finalize STT
       wsRef.current?.send(JSON.stringify({ type: 'audio-end' }));
-      setIsThinking(true);
     } else {
       // Stop any active audio playback first
       if (audioPlaybackRef.current) {
@@ -387,6 +424,21 @@ export default function App() {
           }
         });
         audioStreamRef.current = stream;
+
+        const newId = 'user-trans-' + Math.random().toString();
+        tempUserMsgIdRef.current = newId;
+
+        // Add a placeholder message for the user's incoming transcript
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: newId,
+            sender: 'user',
+            text: '',
+            isStreaming: true,
+            timestamp: new Date()
+          }
+        ]);
 
         // Determine supported container formats
         let mimeType = 'audio/webm';

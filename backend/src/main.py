@@ -112,6 +112,12 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                     if sentence:
                         logger.info(f"Deepgram STT segment: {sentence}")
                         transcript_parts.append(sentence)
+                        await websocket.send_json(
+                            {
+                                "type": "user-transcript-chunk",
+                                "content": sentence,
+                            }
+                        )
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -149,6 +155,12 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                                 user_message = " ".join(transcript_parts).strip()
                                 logger.info(
                                     f"Assembled microphone transcript: {user_message}"
+                                )
+                                await websocket.send_json(
+                                    {
+                                        "type": "user-transcript-final",
+                                        "content": user_message,
+                                    }
                                 )
                             else:
                                 logger.warning(
