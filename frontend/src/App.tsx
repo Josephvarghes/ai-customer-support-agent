@@ -90,6 +90,9 @@ export default function App() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const recordingIntervalRef = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioPlaybackRef = useRef<HTMLAudioElement | null>(null);
 
   // Fetch CRM profiles on mount
   useEffect(() => {
@@ -134,7 +137,21 @@ export default function App() {
       console.log('WebSocket Connected.');
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
+      // 0. Handle binary data (TTS audio bytes)
+      if (event.data instanceof Blob || event.data instanceof ArrayBuffer) {
+        if (audioPlaybackRef.current) {
+          audioPlaybackRef.current.pause();
+          audioPlaybackRef.current = null;
+        }
+        const blob = event.data instanceof Blob ? event.data : new Blob([event.data], { type: 'audio/mp3' });
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audioPlaybackRef.current = audio;
+        audio.play().catch(err => console.error("Speech playback failed:", err));
+        return;
+      }
+
       try {
         const data = JSON.parse(event.data);
 
@@ -339,36 +356,67 @@ export default function App() {
     policyReasonRef.current = ''; // Reset reason tracker
   };
 
-  // Mock Voice Recording simulation
-  const handleMicToggle = () => {
+  // Real Voice Recording and Streaming
+  const handleMicToggle = async () => {
     if (isRecording) {
-      // Stop recording
+      // 1. Stop recording
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop());
+      }
       setIsRecording(false);
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
+
+      // 2. Send control message to backend to finalize STT
+      wsRef.current?.send(JSON.stringify({ type: 'audio-end' }));
+      setIsThinking(true);
+    } else {
+      // Stop any active audio playback first
+      if (audioPlaybackRef.current) {
+        audioPlaybackRef.current.pause();
+        audioPlaybackRef.current = null;
       }
 
-      // Auto-send a transcript based on selected profile
-      const transcript = "Hi, I am Alice Smith (user ID CUST-001). Can I get a refund for my opened Wireless Headphones on order ORD-1001?";
-      handleSendMessage(transcript);
-    } else {
-      // Start recording
-      setIsRecording(true);
-      setRecordingSeconds(0);
-      recordingIntervalRef.current = window.setInterval(() => {
-        setRecordingSeconds((prev) => {
-          if (prev >= 3) {
-            // Auto stop after 3s and trigger send
-            setIsRecording(false);
-            if (recordingIntervalRef.current) {
-              clearInterval(recordingIntervalRef.current);
-            }
-            handleSendMessage("I am Bob Jones (CUST-002). I bought Hydrating Face Cream on order ORD-1002 and opened it. Can I return it?");
-            return 0;
+      try {
+        // Request microphone stream
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
           }
-          return prev + 1;
         });
-      }, 1000);
+        audioStreamRef.current = stream;
+
+        // Determine supported container formats
+        let mimeType = 'audio/webm';
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+          mimeType = 'audio/ogg';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        }
+
+        const mediaRecorder = new MediaRecorder(stream, { mimeType });
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            // Send binary chunk directly to websocket
+            wsRef.current.send(event.data);
+          }
+        };
+
+        // Start recording and stream chunks every 250ms
+        mediaRecorder.start(250);
+        setIsRecording(true);
+      } catch (err) {
+        console.error("Failed to access microphone or start recorder:", err);
+        alert("Could not access your microphone. Please check permissions.");
+      }
     }
   };
 
@@ -631,7 +679,7 @@ export default function App() {
           <div className="p-4 border-t border-slate-900 bg-slate-900/40 backdrop-blur-sm shrink-0">
             <div className="flex items-center space-x-3 bg-slate-950 border border-slate-800 rounded-xl p-2 focus-within:border-indigo-500 transition duration-200">
 
-              {/* Voice Mock Mic Button */}
+              {/* Voice Mic Button */}
               <button
                 type="button"
                 onClick={handleMicToggle}
@@ -640,15 +688,15 @@ export default function App() {
                     ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 animate-pulse'
                     : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-300'
                 }`}
-                title={isRecording ? "Click to finish speaking" : "Synthesize microphone voice query"}
+                title={isRecording ? "Click to finish speaking" : "Stream microphone voice query"}
               >
                 {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
 
               <input
                 type="text"
-                placeholder={isRecording ? `Simulating speech transcription... (${3 - recordingSeconds}s remaining)` : "Ask for a refund (e.g. 'I am Alice Smith CUST-001. Return ORD-1001')"}
-                value={isRecording ? `[Listening...] Simulating voice input transcript... (${recordingSeconds}s)` : inputValue}
+                placeholder={isRecording ? "Listening to your voice... Speak now!" : "Ask for a refund (e.g. 'I am Alice Smith CUST-001. Return ORD-1001')"}
+                value={isRecording ? "[Listening...] Click the microphone button again when finished speaking." : inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 disabled={isRecording}
