@@ -10,9 +10,16 @@
 - [x] Run `uv lock`
 - [x] Perform first git commit, verify with pre-commit hooks
 
-## Phase 2: Agent Architecture (Pending)
-- [ ] Build FastAPI server with endpoints
-- [ ] Design mock CRM database access layer
-- [ ] Implement refund policy evaluation logic
-- [ ] Implement LangGraph agent state/routing graph
-- [ ] Add agent nodes & tools
+## Phase 2: Agent Architecture & Stream Server (Completed)
+- [x] Build FastAPI server with WebSocket and REST endpoints
+- [x] Design mock CRM database access layer
+- [x] Implement refund policy evaluation logic
+- [x] Implement LangGraph agent state/routing graph with checkpointing
+- [x] Add real-time event streaming and reasoning log telemetry via .astream_events(version="v2")
+
+## Phase 3: Monorepo Transition & Frontend UI (In Progress)
+- [x] Reorganize backend directory structure into `backend/`
+- [/] Initialize Vite React + TypeScript frontend in `frontend/`
+- [ ] Integrate Tailwind CSS, Lucide icons, and layout in `frontend/`
+- [ ] Connect WebSocket client, implement dual-panel UI (Chat + Live Logs)
+- [ ] Perform automated quality assurance checks and branch commit

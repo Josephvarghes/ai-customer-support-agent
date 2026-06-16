@@ -1,33 +1,26 @@
 # Agent Scratchpad
 
 ## Current Status
-- Completed core Agent Loop, state schemas, database layer, and policy-checking tools.
-- Resolved circular import issue (E402) by modularizing state definition into a clean `src/agent/state.py` file.
-- Enabled Groq API support using custom base URL override with compile-safe model fallback.
-- Graph successfully compiles and passes ruff validation.
-- All pre-commit hooks are passing cleanly.
-- Implemented real-time streaming WebSocket endpoint in `src/main.py` integrating LangGraph's `.astream_events(version="v2")`.
-- Integrated `MemorySaver` in `src/agent/graph.py` to support persistent thread session states.
-- Implemented `GET /api/crm/profiles` to fetch all customer profile records for dashboard visualizers.
+- Transitioned repository to a clean monorepo structure with distinct `backend/` and `frontend/` workspaces.
+- Initialized Vite + React + TypeScript + Tailwind CSS v3 frontend application inside `frontend/`.
+- Implemented real-time twin-panel dashboard (`frontend/src/App.tsx`) with:
+  - **Left Panel (Customer Support)**: Custom chat interface distinguishing User/Agent messages, an animated thinking indicator, and an interactive mock microphone component with visual count-down simulation that auto-sends transcripts.
+  - **Right Panel (Agent Live Logs)**: Monospaced terminal visualizer displaying streaming reasoning telemetry, styled with semantic color codes (Yellow for Tool executions, Blue for Database CRM lookups, and bold Red for Policy Violations/Denials).
+  - **CRM Database View Drawer**: Fetches customer record array from `GET http://localhost:8000/api/crm/profiles` and enables one-click scenario testing.
+- Configured persistent thread session tracking by generating a unique `client_id` stored in `sessionStorage`.
+- Successfully compiled and verified type-safety of both frontend assets and python backend imports.
 
 ## Architectural Decisions
-1. **Thread-safe CRM Database**: Implemented a `CRMDatabase` singleton with double-checked locking using Python's `threading.Lock` to safely support concurrency.
-2. **Deterministic Policy Engine**: Structured `PolicyEngine` to run static rules checking (returning structured validation check flags) preventing LLM hallucination on refund limits, window limits, and category constraints.
-3. **State Schema & Reducers**:
-   - `messages`: message history list.
-   - `customer_id` / `current_order_id`: tracks current evaluation context.
-   - `policy_checks`: stores boolean truth values of policy evaluations.
-   - `agent_reasoning_logs`: custom list of dictionaries logging tool telemetry (tool, arguments, outcomes, timestamp).
-4. **Deterministic Routing**: Custom routing logic `route_after_tools` intercepts execution after `execute_tools`. If any policy check is violated, it routes immediately to `finalize_decision` which forces `refund_status = "DENIED"`, preventing the LLM from overriding policies.
-5. **Groq API Integration**: Configured ChatOpenAI model in `nodes.py` to prioritize `GROQ_API_KEY` on base URL `https://api.groq.com/openai/v1` for Groq access, with a compile-safe fallback when credentials are not present in test runs.
-6. **Persistent Thread Checkpointing**: Updated graph compilation in `src/agent/graph.py` to utilize `MemorySaver` as a checkpointer. This allows the backend to restore state for a conversation matching a given client ID/thread ID.
-7. **Real-time Event Streaming**: Used the `.astream_events(..., version="v2")` LangGraph API inside FastAPI's websocket connection. This extracts raw text tokens (from `on_chat_model_stream`) and structured reasoning messages (from tool execution and node transitions) to send immediately to the frontend.
+1. **Monorepo Structure**: Isolated backend dependencies and files inside `backend/` to prevent dependency leakage. Frontend is decoupled inside `frontend/`.
+2. **WebSocket Client Session Persistence**: Set up client connection mapping `ws://localhost:8000/ws/chat/{client_id}` where `client_id` is persisted in `sessionStorage` so page reloads do not wipe LangGraph checkpointer state.
+3. **Telemetry-based UI Highlight Mapping**:
+   - `lookup_customer_profile` & `verify_order_eligibility` → Highlighted in **Blue** as database lookups.
+   - `validate_refund_against_policy` and node finalizations containing `DENIED` status → Highlighted in bold **Red** as policy violations.
+   - Any generic tool activation or started events → Highlighted in **Yellow**.
+4. **Chat Outcome Synthesis**: If the backend routing completes at `finalize_decision` with `"refund_status": "DENIED"` (cutting off subsequent LLM text response generation), the frontend intercepts this state and synthesizes a polite refusal message containing the exact policy reason logged in the telemetry.
 
 ## Notes & Discoveries
-- Git branch: `feature/day3-backend-stream`
-- Validation logs: `uv run python -c "from src.agent.graph import app"` executes and compiles cleanly.
-- Web server startup: `uv run uvicorn src.main:app --host 127.0.0.1 --port 8000` starts cleanly.
-
-## Next Steps
-- Implement frontend UI in React to connect to `/ws/chat/{client_id}`.
-- Implement comprehensive client-side telemetry charts using `GET /api/crm/profiles` and the WebSocket reasoning events.
+- Git branch: `feature/day4-frontend-ui`
+- Verification: `npm run build` compiles without errors.
+- Backend Verification: `uv run python -c "from src.agent.graph import app"` compiles cleanly inside `backend/`.
+- Styling: Custom index.css backdrop gradients and Webkit-scrollbar tweaks applied for premium, unified dark aesthetics.
