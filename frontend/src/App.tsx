@@ -405,9 +405,6 @@ export default function App() {
         audioStreamRef.current.getTracks().forEach(track => track.stop());
       }
       setIsRecording(false);
-
-      // 2. Send control message to backend to finalize STT
-      wsRef.current?.send(JSON.stringify({ type: 'audio-end' }));
     } else {
       // Stop any active audio playback first
       if (audioPlaybackRef.current) {
@@ -459,6 +456,12 @@ export default function App() {
           if (event.data.size > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             // Send binary chunk directly to websocket
             wsRef.current.send(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'audio-end' }));
           }
         };
 

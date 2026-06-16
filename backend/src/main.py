@@ -103,6 +103,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
     connection_ctx = None
     listen_task = None
     transcript_parts = []
+    finalize_event = asyncio.Event()
 
     async def listen_to_dg(conn):
         try:
@@ -118,6 +119,8 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                                 "content": sentence,
                             }
                         )
+                if getattr(response, "from_finalize", False):
+                    finalize_event.set()
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -144,10 +147,25 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                             if dg_connection is not None:
                                 # Finalize connection and flush
                                 await dg_connection.send_finalize()
-                                await asyncio.sleep(0.5)
-                                if listen_task:
-                                    listen_task.cancel()
+                                # Wait for finalize event with a timeout
+                                try:
+                                    await asyncio.wait_for(
+                                        finalize_event.wait(), timeout=1.0
+                                    )
+                                except TimeoutError:
+                                    logger.warning(
+                                        "Timeout waiting for Deepgram finalize event."
+                                    )
+
+                                # Gracefully tear down the connection
                                 await connection_ctx.__aexit__(None, None, None)
+                                # Wait for listener task to exit naturally
+                                try:
+                                    await asyncio.wait_for(listen_task, timeout=0.5)
+                                except TimeoutError:
+                                    if listen_task:
+                                        listen_task.cancel()
+
                                 dg_connection = None
                                 connection_ctx = None
                                 listen_task = None
@@ -347,21 +365,24 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
             # 2. Handle BINARY frames
             elif "bytes" in message:
                 binary_data = message["bytes"]
-                if dg_connection is None:
-                    logger.info(
-                        "Initializing persistent Deepgram STT stream connection."
-                    )
-                    transcript_parts.clear()
+                if len(binary_data) > 0:
+                    if dg_connection is None:
+                        logger.info(
+                            "Initializing persistent Deepgram STT stream connection."
+                        )
+                        transcript_parts.clear()
+                        finalize_event.clear()
 
-                    # Connect asynchronously to Deepgram listen API
-                    connection_ctx = voice_engine.async_client.listen.v1.connect(
-                        model="nova-2-general", interim_results=False, language="en-US"
-                    )
-                    dg_connection = await connection_ctx.__aenter__()
-                    listen_task = asyncio.create_task(listen_to_dg(dg_connection))
+                        connection_ctx = voice_engine.async_client.listen.v1.connect(
+                            model="nova-2-general",
+                            interim_results=False,
+                            language="en-US",
+                        )
+                        dg_connection = await connection_ctx.__aenter__()
+                        listen_task = asyncio.create_task(listen_to_dg(dg_connection))
 
-                # Pipe audio chunk bytes into the active Deepgram connection
-                await dg_connection.send_media(binary_data)
+                    # Pipe audio chunk bytes into the active Deepgram connection
+                    await dg_connection.send_media(binary_data)
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket client {client_id} disconnected.")
