@@ -55,6 +55,11 @@ interface CustomerProfile {
   orders: Order[];
 }
 
+const BACKEND_HOST = import.meta.env.VITE_BACKEND_HOST || 'localhost:8000';
+const IS_SECURE = typeof window !== 'undefined' && window.location.protocol === 'https:';
+const HTTP_PROTOCOL = IS_SECURE ? 'https' : 'http';
+const WS_PROTOCOL = IS_SECURE ? 'wss' : 'ws';
+
 export default function App() {
   // Session Persistence Client ID
   const [clientId, setClientId] = useState<string>(() => {
@@ -100,7 +105,7 @@ export default function App() {
 
   const fetchCrmProfiles = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/crm/profiles');
+      const response = await fetch(`${HTTP_PROTOCOL}://${BACKEND_HOST}/api/crm/profiles`);
       if (response.ok) {
         const data = await response.json();
         setCrmProfiles(data);
@@ -126,7 +131,7 @@ export default function App() {
       wsRef.current.close();
     }
 
-    const wsUrl = `ws://localhost:8000/ws/chat/${clientId}`;
+    const wsUrl = `${WS_PROTOCOL}://${BACKEND_HOST}/ws/chat/${clientId}`;
     console.log(`Connecting to WebSocket: ${wsUrl}`);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
