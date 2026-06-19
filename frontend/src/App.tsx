@@ -508,6 +508,23 @@ export default function App() {
     }
   ];
 
+  // Helper to format node and tool names in telemetry logs
+  const formatNodeTitle = (log: ReasoningLog) => {
+    const rawName = log.tool || log.node;
+    if (!rawName) return '';
+    return rawName
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => {
+        const upper = word.toUpperCase();
+        if (upper === 'LLM' || upper === 'CRM' || upper === 'DB' || upper === 'ID' || upper === 'API') {
+          return upper;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
+  };
+
   // Logic to determine color code of logs
   const getLogStyle = (log: ReasoningLog) => {
     // 1. Check for policy violation/denial (Red)
@@ -517,10 +534,10 @@ export default function App() {
 
     if (isDenial) {
       return {
-        bg: 'bg-rose-950/30 border-rose-800/80',
-        text: 'text-rose-400 font-bold',
-        badge: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
-        icon: <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+        bg: 'bg-[#1E293B]/45 border-rose-500/25 hover:bg-rose-500/10',
+        text: 'text-rose-400 font-medium',
+        badge: 'text-rose-400 border border-rose-500/25',
+        icon: <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
       };
     }
 
@@ -531,9 +548,9 @@ export default function App() {
 
     if (isDbLookup) {
       return {
-        bg: 'bg-blue-950/20 border-blue-900/60',
+        bg: 'bg-[#1E293B]/45 border-blue-500/25 hover:bg-blue-500/10',
         text: 'text-blue-400',
-        badge: 'bg-blue-500/10 text-blue-300 border-blue-500/20',
+        badge: 'text-blue-400 border border-blue-500/25',
         icon: <Database className="w-4 h-4 text-blue-400 shrink-0" />
       };
     }
@@ -541,9 +558,9 @@ export default function App() {
     // 3. Check for general tool call (Yellow)
     if (log.tool) {
       return {
-        bg: 'bg-amber-950/20 border-amber-900/60',
+        bg: 'bg-[#1E293B]/45 border-amber-500/25 hover:bg-amber-500/10',
         text: 'text-amber-400',
-        badge: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+        badge: 'text-amber-400 border border-amber-500/25',
         icon: <Terminal className="w-4 h-4 text-amber-400 shrink-0" />
       };
     }
@@ -551,21 +568,21 @@ export default function App() {
     // 4. Default: node transitions (Grey/Green)
     const isComplete = log.status === 'node_completed';
     return {
-      bg: 'bg-slate-900/40 border-slate-800/60',
-      text: isComplete ? 'text-emerald-400' : 'text-slate-400',
-      badge: 'bg-slate-800 text-slate-300 border-slate-700',
-      icon: isComplete ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+      bg: 'bg-[#1E293B]/20 border-subtle hover:bg-[#1E293B]/30',
+      text: isComplete ? 'text-emerald-400 font-medium' : 'text-slate-400',
+      badge: isComplete ? 'text-emerald-400 border border-emerald-500/25' : 'text-slate-400 border border-white/10',
+      icon: isComplete ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
     };
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen bg-slate-950 overflow-hidden text-slate-100">
+    <div className="flex flex-col h-screen max-h-screen bg-[#0B0F19] overflow-hidden text-slate-100 font-sans">
 
       {/* HEADER NAVBAR */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md z-10 shrink-0">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/60 backdrop-blur-md z-10 shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-indigo-600/20 border border-indigo-500/30">
-            <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+          <div className="p-2 rounded-lg bg-indigo-600/10 border border-indigo-500/20">
+            <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse-slow" />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
@@ -575,21 +592,23 @@ export default function App() {
           </div>
         </div>
 
-        {/* CONNECTION STATUS & SESSION CONTROLLER */}
-        <div className="flex items-center space-x-4">
+        {/* CONNECTION STATUS & SESSION CONTROLLER PILL */}
+        <div className="flex items-center bg-[#131B2E] border border-subtle rounded-full p-1.5 space-x-1">
           <button
             onClick={() => {
               setShowCrmDrawer(true);
               fetchCrmProfiles();
             }}
-            className="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition duration-150"
+            className="flex items-center space-x-1.5 text-xs font-semibold px-3 py-1 rounded-full text-slate-300 hover:text-white hover:bg-white/5 transition duration-150"
           >
-            <Database className="w-3.5 h-3.5 text-indigo-400" />
-            <span>CRM Database Records</span>
+            <Database className="w-3.5 h-3.5 text-slate-400" />
+            <span>CRM Database</span>
           </button>
 
-          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 text-xs font-mono">
-            <span className="text-slate-500">Session ID:</span>
+          <div className="h-4 w-px bg-white/10" />
+
+          <div className="flex items-center space-x-1.5 px-3 text-xs font-mono">
+            <span className="text-slate-500">ID:</span>
             <input
               type="text"
               value={clientId}
@@ -600,26 +619,32 @@ export default function App() {
                   sessionStorage.setItem('ai_support_client_id', newId);
                 }
               }}
-              className="bg-transparent text-indigo-300 font-semibold focus:outline-none border-b border-transparent focus:border-indigo-500 w-32 px-1"
+              className="bg-transparent text-indigo-300 font-semibold focus:outline-none border-b border-transparent focus:border-indigo-500 w-24 text-center px-1"
               title="Change session ID to test state checkpointer recovery"
             />
           </div>
 
-          <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold ${
-            connectionStatus === 'connected' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-            connectionStatus === 'connecting' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse' :
-            'bg-rose-500/10 text-rose-400 border-rose-500/20'
-          }`}>
-            {connectionStatus === 'connected' ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+          <div className="h-4 w-px bg-white/10" />
+
+          <div className="flex items-center space-x-1.5 px-3 py-1 text-xs font-semibold text-slate-300">
+            {connectionStatus === 'connected' ? (
+              <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+            ) : connectionStatus === 'connecting' ? (
+              <Wifi className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            ) : (
+              <WifiOff className="w-3.5 h-3.5 text-rose-400" />
+            )}
             <span className="capitalize">{connectionStatus}</span>
           </div>
+
+          <div className="h-4 w-px bg-white/10" />
 
           <button
             onClick={connectWebSocket}
             title="Reconnect WebSocket"
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition duration-150"
+            className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-white/5 transition duration-150"
           >
-            <RefreshCw className="w-4 h-4 text-slate-400" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>
@@ -628,10 +653,10 @@ export default function App() {
       <main className="flex flex-1 flex-row min-h-0 overflow-hidden relative">
 
         {/* LEFT PANEL: CUSTOMER INTERFACE */}
-        <section className="flex flex-col flex-1 border-r border-slate-800 bg-slate-950/40 relative min-h-0 w-1/2 min-w-0">
+        <section className="flex flex-col flex-1 border-r border-subtle bg-[#131B2E] relative min-h-0 w-1/2 min-w-0">
 
           {/* PANEL HEADER */}
-          <div className="flex items-center justify-between px-6 py-3 border-b border-slate-900 bg-slate-900/10 shrink-0">
+          <div className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/40 shrink-0">
             <div className="flex items-center space-x-2">
               <User className="w-4 h-4 text-indigo-400" />
               <span className="text-sm font-semibold text-slate-300">Customer Support Chat</span>
@@ -644,7 +669,6 @@ export default function App() {
               <span>Clear History</span>
             </button>
           </div>
-
           {/* CHAT MESSAGES WINDOW */}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
             {messages.map((msg) => (
@@ -655,12 +679,12 @@ export default function App() {
                 }`}
               >
                 {/* Avatar */}
-                <div className={`p-2 rounded-full shrink-0 ${
+                <div className={`p-2 rounded-lg shrink-0 ${
                   msg.sender === 'user'
-                    ? 'bg-indigo-600/20 border border-indigo-500/30'
+                    ? 'bg-indigo-600/10 border border-indigo-500/20'
                     : msg.sender === 'system'
-                      ? 'bg-rose-500/20 border border-rose-500/30'
-                      : 'bg-slate-800 border border-slate-700'
+                      ? 'bg-rose-500/10 border border-rose-500/20'
+                      : 'bg-[#1E293B] border border-subtle'
                 }`}>
                   {msg.sender === 'user' ? (
                     <User className="w-4 h-4 text-indigo-400" />
@@ -673,19 +697,19 @@ export default function App() {
 
                 {/* Message Bubble */}
                 <div className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed border ${
+                  <div className={`px-5 py-3.5 rounded-2xl text-sm leading-relaxed border ${
                     msg.sender === 'user'
-                      ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-500/50 rounded-tr-none'
+                      ? 'bg-gradient-to-br from-indigo-500/20 to-violet-500/20 text-slate-100 border-indigo-500/35 backdrop-blur-sm rounded-tr-none'
                       : msg.sender === 'system'
-                        ? 'bg-rose-950/20 text-rose-300 border-rose-900/50 rounded-tl-none font-mono text-xs'
-                        : 'bg-slate-900/80 text-slate-200 border-slate-800 rounded-tl-none'
+                        ? 'bg-rose-950/20 text-rose-300 border-rose-900/40 rounded-tl-none font-mono text-xs'
+                        : 'bg-[#1E293B]/80 text-slate-200 border-subtle rounded-tl-none'
                   }`}>
                     {msg.text}
                     {msg.isStreaming && (
                       <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-400 animate-pulse align-middle" />
                     )}
                   </div>
-                  <span className="text-[10px] text-slate-600 mt-1">
+                  <span className="text-[10px] text-slate-500 mt-1">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
                 </div>
@@ -695,11 +719,11 @@ export default function App() {
             {/* THINKING INDICATOR */}
             {isThinking && (
               <div className="flex items-start space-x-3 max-w-[85%]">
-                <div className="p-2 rounded-full bg-slate-800 border border-slate-700 shrink-0">
+                <div className="p-2 rounded-lg bg-[#1E293B] border border-subtle shrink-0">
                   <Bot className="w-4 h-4 text-slate-400" />
                 </div>
                 <div className="flex flex-col items-start">
-                  <div className="px-4 py-3 bg-slate-900/50 border border-slate-800/80 rounded-2xl rounded-tl-none flex items-center space-x-2">
+                  <div className="px-5 py-3.5 bg-[#1E293B]/50 border border-subtle/80 rounded-2xl rounded-tl-none flex items-center space-x-2">
                     <span className="text-xs text-slate-400 font-medium animate-pulse-slow">Agent evaluating policy...</span>
                     <div className="flex space-x-1">
                       <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -715,14 +739,14 @@ export default function App() {
           </div>
 
           {/* QUICK CHIPS SCENARIOS */}
-          <div className="px-6 py-2 border-t border-slate-900 bg-slate-950 bg-opacity-80 shrink-0">
+          <div className="px-6 py-2.5 border-t border-subtle bg-[#0B0F19]/40 shrink-0">
             <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-thin">
               <span className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase shrink-0">Scenarios:</span>
               {demoScenarios.map((scen, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(scen.text)}
-                  className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/20 text-slate-400 hover:text-indigo-300 transition duration-150 shrink-0"
+                  className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#1E293B] border border-subtle hover:border-indigo-500/40 hover:bg-indigo-950/20 text-slate-300 hover:text-indigo-300 transition duration-150 shrink-0"
                 >
                   {scen.label}
                 </button>
@@ -731,8 +755,8 @@ export default function App() {
           </div>
 
           {/* CHAT INPUT AREA */}
-          <div className="p-4 border-t border-slate-900 bg-slate-900/40 backdrop-blur-sm shrink-0">
-            <div className="flex items-center space-x-3 bg-slate-950 border border-slate-800 rounded-xl p-2 focus-within:border-indigo-500 transition duration-200">
+          <div className="p-4 border-t border-subtle bg-[#0B0F19]/60 backdrop-blur-sm shrink-0">
+            <div className="flex items-center space-x-3 bg-[#131B2E] border border-subtle rounded-xl p-2 focus-within:border-indigo-500/40 transition duration-200">
 
               {/* Voice Mic Button */}
               <button
@@ -741,7 +765,7 @@ export default function App() {
                 className={`p-2.5 rounded-lg border transition duration-200 ${
                   isRecording
                     ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 animate-pulse'
-                    : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-300'
+                    : 'bg-[#1E293B] border-subtle hover:border-slate-600 text-slate-400 hover:text-slate-300'
                 }`}
                 title={isRecording ? "Click to finish speaking" : "Stream microphone voice query"}
               >
@@ -762,23 +786,22 @@ export default function App() {
                 type="button"
                 onClick={() => handleSendMessage()}
                 disabled={!inputValue.trim() || isRecording}
-                className="p-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:bg-slate-900 disabled:text-slate-600 transition duration-200"
+                className="p-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:bg-[#1E293B]/50 disabled:text-slate-600 border border-indigo-500/20 disabled:border-transparent transition duration-200"
               >
                 <Send className="w-4 h-4" />
               </button>
 
             </div>
           </div>
-
         </section>
 
         {/* RIGHT PANEL: LIVE TELEMETRY & REASONING LOGS */}
-        <section className="flex flex-col flex-1 bg-slate-950/60 min-h-0 w-1/2 min-w-0">
+        <section className="flex flex-col flex-1 bg-[#131B2E] min-h-0 w-1/2 min-w-0">
 
           {/* PANEL HEADER */}
-          <div className="flex items-center justify-between px-6 py-3 border-b border-slate-900 bg-slate-900/10 shrink-0">
+          <div className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/40 shrink-0">
             <div className="flex items-center space-x-2">
-              <Terminal className="w-4 h-4 text-amber-400 animate-pulse" />
+              <Terminal className="w-4 h-4 text-amber-400 animate-pulse-slow" />
               <span className="text-sm font-semibold text-slate-300">Agent Reasoning Live Logs</span>
             </div>
             <div className="flex items-center space-x-2">
@@ -791,7 +814,7 @@ export default function App() {
           </div>
 
           {/* TERMINAL VIEWER CONTAINER */}
-          <div className="flex-1 overflow-y-auto p-6 bg-slate-950 font-mono text-xs space-y-3">
+          <div className="flex-1 overflow-y-auto p-6 bg-[#0B0F19]/25 font-mono text-xs space-y-4">
 
             {logs.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-3">
@@ -806,15 +829,16 @@ export default function App() {
                 return (
                   <div
                     key={log.id}
-                    className={`p-3.5 rounded-lg border transition duration-150 hover:bg-slate-900/50 ${style.bg}`}
+                    className={`p-5 rounded-lg border transition duration-150 ${style.bg}`}
                   >
 
                     {/* Log Event Meta Header */}
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-2.5">
                       <div className="flex items-center space-x-2">
                         {style.icon}
-                        <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded border font-semibold tracking-wider font-sans ${style.badge}`}>
-                          {log.tool ? `tool: ${log.tool}` : `node: ${log.node}`}
+                        <span className="text-[11px] font-semibold text-slate-300 font-sans tracking-wide">
+                          {log.tool ? 'Tool: ' : 'Node: '}
+                          <span className={`${style.text} font-bold`}>{formatNodeTitle(log)}</span>
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-500">{log.timestamp}</span>
@@ -827,10 +851,10 @@ export default function App() {
                       {(log.status === 'started' || log.status === 'node_started') && (
                         <div>
                           <span className="text-slate-500">
-                            {log.tool ? `↳ Invoking tool with parameters:` : `❖ Entering Graph Node: ${log.node}`}
+                            {log.tool ? `↳ Invoking tool with parameters:` : `❖ Entering Node: ${formatNodeTitle(log)}`}
                           </span>
                           {log.arguments && (
-                            <pre className="mt-1 bg-slate-950 p-2 rounded border border-slate-900 text-[11px] overflow-x-auto text-slate-400 max-h-40">
+                            <pre className="mt-2 bg-[#0B0F19]/60 p-2.5 rounded-lg border border-subtle text-[11px] overflow-x-auto text-slate-400 max-h-40 font-mono">
                               {JSON.stringify(log.arguments, null, 2)}
                             </pre>
                           )}
@@ -844,7 +868,7 @@ export default function App() {
                             <span className="text-slate-500">✓ Outcome:</span> {log.telemetry.outcome || log.telemetry.output || 'Complete.'}
                           </div>
                           {log.telemetry.arguments && (
-                            <div className="text-[10px] text-slate-500 font-sans">
+                            <div className="text-[10px] text-slate-500 font-sans mt-1">
                               Arguments evaluated: {JSON.stringify(log.telemetry.arguments)}
                             </div>
                           )}
@@ -856,7 +880,7 @@ export default function App() {
                         <div>
                           <span className="text-slate-500">✓ Node completed exit status:</span>
                           {log.output && (
-                            <pre className="mt-1 bg-slate-950 p-2 rounded border border-slate-900 text-[11px] overflow-x-auto text-slate-400 max-h-40">
+                            <pre className="mt-2 bg-[#0B0F19]/60 p-2.5 rounded-lg border border-subtle text-[11px] overflow-x-auto text-slate-400 max-h-40 font-mono">
                               {JSON.stringify(log.output, null, 2)}
                             </pre>
                           )}
@@ -881,13 +905,13 @@ export default function App() {
           </div>
 
           {/* LOWER STATUS AND CONTROLS */}
-          <div className="px-6 py-3 border-t border-slate-900 bg-slate-900/20 flex items-center justify-between shrink-0">
+          <div className="px-6 py-3 border-t border-subtle bg-[#0B0F19]/45 flex items-center justify-between shrink-0">
             <span className="text-[10px] text-slate-500 font-mono">
               Total Log Frames: {logs.length}
             </span>
             <button
               onClick={() => setLogs([])}
-              className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-300 transition duration-150 px-2 py-1 bg-slate-900 hover:bg-slate-800 rounded border border-slate-800"
+              className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-300 transition duration-150 px-2 py-1 bg-[#1E293B] hover:bg-slate-800 rounded-lg border border-subtle"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Clear Terminal</span>
@@ -901,10 +925,10 @@ export default function App() {
       {/* COLLAPSIBLE SIDE DRAWER FOR CRM DATABASE VIEWER */}
       {showCrmDrawer && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-xl bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl p-6 overflow-hidden">
+          <div className="w-full max-w-xl bg-[#131B2E] border-l border-subtle h-full flex flex-col shadow-2xl p-6 overflow-hidden">
 
             {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <div className="flex items-center justify-between border-b border-subtle pb-4 mb-4">
               <div className="flex items-center space-x-2.5">
                 <Database className="w-5 h-5 text-indigo-400" />
                 <div>
@@ -914,7 +938,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setShowCrmDrawer(false)}
-                className="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition"
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#1E293B] hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-subtle transition duration-150"
               >
                 Close
               </button>
@@ -930,7 +954,7 @@ export default function App() {
                 crmProfiles.map((profile) => (
                   <div
                     key={profile.customer_id}
-                    className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition"
+                    className="p-4 rounded-xl bg-[#0B0F19]/45 border border-subtle hover:border-slate-700/50 transition duration-150"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div>
@@ -938,9 +962,9 @@ export default function App() {
                         <span className="text-[10px] text-slate-500 ml-2 font-mono">{profile.customer_id}</span>
                       </div>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                        profile.membership_tier === 'Premium' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                        profile.membership_tier === 'Gold' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                        'bg-slate-800 text-slate-400 border-slate-700'
+                        profile.membership_tier === 'Premium' ? 'bg-purple-500/5 text-purple-400 border-purple-500/20' :
+                        profile.membership_tier === 'Gold' ? 'bg-amber-500/5 text-amber-400 border-amber-500/20' :
+                        'bg-white/5 text-slate-400 border-white/10'
                       }`}>
                         {profile.membership_tier}
                       </span>
@@ -948,11 +972,11 @@ export default function App() {
 
                     <div className="text-xs text-slate-400 mb-3">{profile.email}</div>
 
-                    <div className="border-t border-slate-900 pt-2">
+                    <div className="border-t border-subtle pt-2">
                       <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Orders:</span>
                       <div className="mt-1 space-y-2">
                         {profile.orders.map((order) => (
-                          <div key={order.order_id} className="p-2 rounded bg-slate-900/60 text-xs border border-slate-800 flex justify-between items-start">
+                          <div key={order.order_id} className="p-2 rounded bg-[#131B2E]/60 text-xs border border-subtle flex justify-between items-start">
                             <div className="space-y-0.5">
                               <div className="font-bold text-indigo-400 font-mono">{order.order_id}</div>
                               <div className="text-slate-300 font-semibold">{order.item_name}</div>
@@ -970,7 +994,7 @@ export default function App() {
                                   handleSendMessage(text);
                                   setShowCrmDrawer(false);
                                 }}
-                                className="mt-2 text-[10px] bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-2 py-0.5 rounded border border-indigo-500/20 hover:border-transparent transition"
+                                className="mt-2 text-[10px] bg-indigo-600/10 hover:bg-indigo-600 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg border border-indigo-500/20 hover:border-transparent transition duration-150"
                               >
                                 Test Scenario
                               </button>
@@ -986,7 +1010,7 @@ export default function App() {
             </div>
 
             {/* Bottom Note */}
-            <div className="border-t border-slate-800 pt-4 mt-2 flex items-center space-x-2 text-[10px] text-slate-500 font-sans">
+            <div className="border-t border-subtle pt-4 mt-2 flex items-center space-x-2 text-[10px] text-slate-500 font-sans">
               <Info className="w-3.5 h-3.5 text-slate-600 shrink-0" />
               <span>Use the CUST ID and ORD ID to evaluate refund eligibility against store policies.</span>
             </div>
