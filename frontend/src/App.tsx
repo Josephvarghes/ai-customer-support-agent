@@ -18,6 +18,8 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import HeroPage from './HeroPage';
 
 interface Message {
   id: string;
@@ -86,6 +88,7 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [showCrmDrawer, setShowCrmDrawer] = useState(false);
   const [crmProfiles, setCrmProfiles] = useState<CustomerProfile[]>([]);
+  const [view, setView] = useState<'hero' | 'dashboard'>('hero');
 
   // Last policy evaluation reason to synthesize refusal in case of routing cut-off
   const policyReasonRef = useRef<string>('');
@@ -597,6 +600,30 @@ export default function App() {
           </div>
         </div>
 
+        {/* NAVIGATION TABS */}
+        <div className="flex bg-[#131B2E] border border-subtle rounded-xl p-1 space-x-1">
+          <button
+            onClick={() => setView('hero')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+              view === 'hero'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+            }`}
+          >
+            Product Tour
+          </button>
+          <button
+            onClick={() => setView('dashboard')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+              view === 'dashboard'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+            }`}
+          >
+            Live Console
+          </button>
+        </div>
+
         {/* CONNECTION STATUS & SESSION CONTROLLER PILL */}
         <div className="flex items-center bg-[#131B2E] border border-subtle rounded-full p-1.5 space-x-1">
           <button
@@ -654,8 +681,29 @@ export default function App() {
         </div>
       </header>
 
-      {/* DASHBOARD SPLIT-PANEL LAYOUT */}
+      {/* DASHBOARD CONTENT OR HERO PAGE */}
       <main className="flex flex-1 flex-row min-h-0 overflow-hidden relative">
+        <AnimatePresence mode="wait">
+          {view === 'hero' ? (
+            <motion.div
+              key="hero"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="flex-1 min-h-full"
+            >
+              <HeroPage onLaunchDashboard={() => setView('dashboard')} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="flex flex-1 flex-row min-h-0 overflow-hidden w-full"
+            >
 
         {/* LEFT PANEL: CUSTOMER INTERFACE */}
         <section className="flex flex-col flex-1 border-r border-subtle bg-[#131B2E] relative min-h-0 w-1/2 min-w-0">
@@ -924,6 +972,9 @@ export default function App() {
           </div>
 
         </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </main>
 

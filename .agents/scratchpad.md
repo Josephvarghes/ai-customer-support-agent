@@ -7,6 +7,7 @@
   - **Left Panel (Customer Support)**: Custom chat interface distinguishing User/Agent messages, an animated thinking indicator, and an interactive mock microphone component with visual count-down simulation that auto-sends transcripts.
   - **Right Panel (Agent Live Logs)**: Monospaced terminal visualizer displaying streaming reasoning telemetry, styled with semantic color codes (Yellow for Tool executions, Blue for Database CRM lookups, and bold Red for Policy Violations/Denials).
   - **CRM Database View Drawer**: Fetches customer record array from `GET http://localhost:8000/api/crm/profiles` and enables one-click scenario testing.
+- Added a professional, animated Hero & Product Tour page (`frontend/src/HeroPage.tsx`) utilizing Framer Motion for entering overlays, stagger loads, card transitions, and navigation layout views.
 - Configured persistent thread session tracking by generating a unique `client_id` stored in `sessionStorage`.
 - Successfully compiled and verified type-safety of both frontend assets and python backend imports.
 - Integrated Deepgram STT (Real-Time Live Transcription) and TTS (Ultra-Low Latency Aura synthesis) into backend.
