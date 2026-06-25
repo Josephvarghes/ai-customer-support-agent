@@ -89,6 +89,7 @@ export default function App() {
   const [showCrmDrawer, setShowCrmDrawer] = useState(false);
   const [crmProfiles, setCrmProfiles] = useState<CustomerProfile[]>([]);
   const [view, setView] = useState<'hero' | 'dashboard'>('hero');
+  const [mobileTab, setMobileTab] = useState<'chat' | 'logs'>('chat');
 
   // Last policy evaluation reason to synthesize refusal in case of routing cut-off
   const policyReasonRef = useRef<string>('');
@@ -587,24 +588,24 @@ export default function App() {
     <div className="flex flex-col h-screen max-h-screen bg-[#0B0F19] overflow-hidden text-slate-100 font-sans">
 
       {/* HEADER NAVBAR */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/60 backdrop-blur-md z-10 shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-indigo-600/10 border border-indigo-500/20">
-            <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse-slow" />
+      <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b border-subtle bg-[#0B0F19]/60 backdrop-blur-md z-10 shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-600/10 border border-indigo-500/20">
+            <Sparkles className="w-4 h-4 sm:w-5 h-5 text-indigo-400 animate-pulse-slow" />
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
+            <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
               OmniAI Refund Care
             </h1>
-            <p className="text-xs text-slate-500 font-medium">Twin-Panel Stream Controller</p>
+            <p className="text-xs text-slate-500 font-medium hidden sm:block">Twin-Panel Stream Controller</p>
           </div>
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="flex bg-[#131B2E] border border-subtle rounded-xl p-1 space-x-1">
+        <div className="flex bg-[#131B2E] border border-subtle rounded-xl p-0.5 sm:p-1 space-x-0.5 sm:space-x-1">
           <button
             onClick={() => setView('hero')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+            className={`px-2 sm:px-4 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-150 ${
               view === 'hero'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
@@ -614,7 +615,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setView('dashboard')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+            className={`px-2 sm:px-4 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-150 ${
               view === 'dashboard'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
@@ -625,22 +626,22 @@ export default function App() {
         </div>
 
         {/* CONNECTION STATUS & SESSION CONTROLLER PILL */}
-        <div className="flex items-center bg-[#131B2E] border border-subtle rounded-full p-1.5 space-x-1">
+        <div className="flex items-center bg-[#131B2E] border border-subtle rounded-full p-0.5 sm:p-1.5 space-x-0.5 sm:space-x-1">
           <button
             onClick={() => {
               setShowCrmDrawer(true);
               fetchCrmProfiles();
             }}
-            className="flex items-center space-x-1.5 text-xs font-semibold px-3 py-1 rounded-full text-slate-300 hover:text-white hover:bg-white/5 transition duration-150"
+            className="flex items-center space-x-1 sm:space-x-1.5 text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-slate-300 hover:text-white hover:bg-white/5 transition duration-150"
           >
-            <Database className="w-3.5 h-3.5 text-slate-400" />
-            <span>CRM Database</span>
+            <Database className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden md:inline">CRM Database</span>
           </button>
 
-          <div className="h-4 w-px bg-white/10" />
+          <div className="h-3 sm:h-4 w-px bg-white/10" />
 
-          <div className="flex items-center space-x-1.5 px-3 text-xs font-mono">
-            <span className="text-slate-500">ID:</span>
+          <div className="flex items-center space-x-0.5 sm:space-x-1.5 px-1.5 sm:px-3 text-[10px] sm:text-xs font-mono">
+            <span className="text-slate-500 hidden sm:inline">ID:</span>
             <input
               type="text"
               value={clientId}
@@ -651,32 +652,32 @@ export default function App() {
                   sessionStorage.setItem('ai_support_client_id', newId);
                 }
               }}
-              className="bg-transparent text-indigo-300 font-semibold focus:outline-none border-b border-transparent focus:border-indigo-500 w-24 text-center px-1"
+              className="bg-transparent text-indigo-300 font-semibold focus:outline-none border-b border-transparent focus:border-indigo-500 w-16 sm:w-24 text-center px-0.5"
               title="Change session ID to test state checkpointer recovery"
             />
           </div>
 
-          <div className="h-4 w-px bg-white/10" />
+          <div className="h-3 sm:h-4 w-px bg-white/10" />
 
-          <div className="flex items-center space-x-1.5 px-3 py-1 text-xs font-semibold text-slate-300">
+          <div className="flex items-center space-x-0.5 sm:space-x-1.5 px-1.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-slate-300">
             {connectionStatus === 'connected' ? (
-              <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+              <Wifi className="w-3 h-3 sm:w-3.5 h-3.5 text-emerald-400" />
             ) : connectionStatus === 'connecting' ? (
               <Wifi className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
             ) : (
-              <WifiOff className="w-3.5 h-3.5 text-rose-400" />
+              <WifiOff className="w-3 h-3 sm:w-3.5 h-3.5 text-rose-400" />
             )}
-            <span className="capitalize">{connectionStatus}</span>
+            <span className="capitalize hidden md:inline">{connectionStatus}</span>
           </div>
 
-          <div className="h-4 w-px bg-white/10" />
+          <div className="h-3 sm:h-4 w-px bg-white/10" />
 
           <button
             onClick={connectWebSocket}
             title="Reconnect WebSocket"
             className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-white/5 transition duration-150"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3 h-3 sm:w-3.5 h-3.5" />
           </button>
         </div>
       </header>
@@ -702,11 +703,36 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="flex flex-1 flex-row min-h-0 overflow-hidden w-full"
+              className="flex flex-1 flex-col md:flex-row min-h-0 overflow-hidden w-full"
             >
+              {/* Mobile Tab Switcher */}
+              <div className="flex md:hidden bg-[#0B0F19] border-b border-subtle p-1.5 space-x-1.5 shrink-0">
+                <button
+                  onClick={() => setMobileTab('chat')}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all duration-150 ${
+                    mobileTab === 'chat'
+                      ? 'bg-indigo-600 text-white shadow-sm font-extrabold'
+                      : 'bg-[#131B2E] text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  Chat Console
+                </button>
+                <button
+                  onClick={() => setMobileTab('logs')}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold text-center transition-all duration-150 ${
+                    mobileTab === 'logs'
+                      ? 'bg-indigo-600 text-white shadow-sm font-extrabold'
+                      : 'bg-[#131B2E] text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  Live Logs ({logs.length})
+                </button>
+              </div>
 
-        {/* LEFT PANEL: CUSTOMER INTERFACE */}
-        <section className="flex flex-col flex-1 border-r border-subtle bg-[#131B2E] relative min-h-0 w-1/2 min-w-0">
+              {/* LEFT PANEL: CUSTOMER INTERFACE */}
+              <section className={`flex-col flex-1 md:border-r border-subtle bg-[#131B2E] relative min-h-0 min-w-0 ${
+                mobileTab === 'chat' ? 'flex w-full' : 'hidden'
+              } md:flex md:w-1/2`}>
 
           {/* PANEL HEADER */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/40 shrink-0">
@@ -849,7 +875,9 @@ export default function App() {
         </section>
 
         {/* RIGHT PANEL: LIVE TELEMETRY & REASONING LOGS */}
-        <section className="flex flex-col flex-1 bg-[#131B2E] min-h-0 w-1/2 min-w-0">
+        <section className={`flex-col flex-1 bg-[#131B2E] min-h-0 min-w-0 ${
+          mobileTab === 'logs' ? 'flex w-full' : 'hidden'
+        } md:flex md:w-1/2`}>
 
           {/* PANEL HEADER */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/40 shrink-0">
@@ -980,8 +1008,14 @@ export default function App() {
 
       {/* COLLAPSIBLE SIDE DRAWER FOR CRM DATABASE VIEWER */}
       {showCrmDrawer && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-xl bg-[#131B2E] border-l border-subtle h-full flex flex-col shadow-2xl p-6 overflow-hidden">
+        <div 
+          className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowCrmDrawer(false)}
+        >
+          <div 
+            className="w-full sm:max-w-xl bg-[#131B2E] border-l border-subtle h-full flex flex-col shadow-2xl p-4 sm:p-6 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
 
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-subtle pb-4 mb-4">
