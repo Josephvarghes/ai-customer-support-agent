@@ -91,11 +91,6 @@ export default function App() {
   const [view, setView] = useState<'hero' | 'dashboard'>('hero');
   const [mobileTab, setMobileTab] = useState<'chat' | 'logs'>('chat');
 
-  // Backend Wake-up States
-  const [backendState, setBackendState] = useState<'awake' | 'waking' | 'error' | 'idle'>('idle');
-  const [wakeUpProgress, setWakeUpProgress] = useState(0);
-  const [wakeUpError, setWakeUpError] = useState<string | null>(null);
-
   // Last policy evaluation reason to synthesize refusal in case of routing cut-off
   const policyReasonRef = useRef<string>('');
 
@@ -107,10 +102,10 @@ export default function App() {
   const audioPlaybackRef = useRef<HTMLAudioElement | null>(null);
   const tempUserMsgIdRef = useRef<string>('');
 
-  // Heartbeat & Reconnection Refs
-  const heartbeatIntervalRef = useRef<any>(null);
-  const reconnectTimeoutRef = useRef<any>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
+  // Fetch CRM profiles on mount
+  useEffect(() => {
+    fetchCrmProfiles();
+  }, []);
 
   const fetchCrmProfiles = async () => {
     try {
@@ -124,107 +119,18 @@ export default function App() {
     }
   };
 
-  const cleanupHeartbeat = () => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-  };
-
-  const handleReconnect = () => {
-    cleanupHeartbeat();
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
-    if (reconnectAttemptsRef.current < 5) {
-      const delay = Math.min(30000, Math.pow(2, reconnectAttemptsRef.current) * 2000);
-      console.log(`Attempting reconnect in ${delay}ms... (Attempt ${reconnectAttemptsRef.current + 1})`);
-      setConnectionStatus('connecting');
-      reconnectTimeoutRef.current = setTimeout(() => {
-        reconnectAttemptsRef.current += 1;
-        wakeUpBackend(true).then((success) => {
-          if (success) {
-            reconnectAttemptsRef.current = 0;
-          } else {
-            setConnectionStatus('disconnected');
-            handleReconnect(); // try again
-          }
-        });
-      }, delay);
-    } else {
-      console.log('Max reconnect attempts reached.');
-      setConnectionStatus('disconnected');
-    }
-  };
-
-  const wakeUpBackend = async (silent = false) => {
-    if (!silent) {
-      setBackendState('waking');
-      setWakeUpError(null);
-      setWakeUpProgress(0);
-      setConnectionStatus('connecting');
-    }
-    const healthUrl = `${HTTP_PROTOCOL}://${BACKEND_HOST}/health`;
-    const maxAttempts = 35;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        console.log(`Backend wake-up attempt ${attempt}/${maxAttempts} calling ${healthUrl}...`);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
-
-        const response = await fetch(healthUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          console.log('Backend is awake and healthy.');
-          setBackendState('awake');
-          setWakeUpError(null);
-          fetchCrmProfiles();
-          connectWebSocket();
-          return true;
-        }
-      } catch (err) {
-        console.log(`Attempt ${attempt} failed:`, err);
-      }
-
-      if (!silent) {
-        setWakeUpProgress(Math.min(100, Math.round((attempt / maxAttempts) * 100)));
-      }
-
-      // Wait 3 seconds before next check
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
-
-    if (!silent) {
-      setBackendState('error');
-      setWakeUpError('The support engine backend failed to respond. It may be sleeping or offline.');
-      setConnectionStatus('disconnected');
-    }
-    return false;
-  };
-
   // WebSocket Connection Lifecycle
   useEffect(() => {
-    wakeUpBackend();
+    connectWebSocket();
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
-      }
-      cleanupHeartbeat();
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
       }
     };
   }, [clientId]);
 
   const connectWebSocket = () => {
     setConnectionStatus('connecting');
-    cleanupHeartbeat();
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
     if (wsRef.current) {
       wsRef.current.close();
     }
@@ -236,17 +142,7 @@ export default function App() {
 
     ws.onopen = () => {
       setConnectionStatus('connected');
-      setBackendState('awake');
       console.log('WebSocket Connected.');
-      reconnectAttemptsRef.current = 0;
-
-      // Setup heartbeat every 30 seconds
-      heartbeatIntervalRef.current = setInterval(() => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          console.log('Sending heartbeat ping...');
-          wsRef.current.send(JSON.stringify({ type: 'ping' }));
-        }
-      }, 30000);
     };
 
     ws.onmessage = async (event) => {
@@ -455,13 +351,13 @@ export default function App() {
     };
 
     ws.onclose = () => {
-      console.log('WebSocket Disconnected. Reconnecting...');
-      handleReconnect();
+      setConnectionStatus('disconnected');
+      console.log('WebSocket Disconnected.');
     };
 
     ws.onerror = (err) => {
-      console.error('WebSocket Error. Reconnecting...', err);
-      handleReconnect();
+      setConnectionStatus('disconnected');
+      console.error('WebSocket Error:', err);
     };
   };
 
@@ -480,8 +376,8 @@ export default function App() {
     if (!text) return;
 
     if (connectionStatus !== 'connected') {
-      console.log('Connection not active. Triggering backend wake up.');
-      wakeUpBackend(false);
+      alert('WebSocket is currently disconnected. Reconnecting...');
+      connectWebSocket();
       return;
     }
 
@@ -838,72 +734,6 @@ export default function App() {
                 mobileTab === 'chat' ? 'flex w-full' : 'hidden'
               } md:flex md:w-1/2`}>
 
-            {backendState === 'waking' && (
-              <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center">
-                <div className="max-w-md w-full bg-[#131B2E] border border-subtle p-8 rounded-2xl shadow-2xl relative overflow-hidden">
-                  <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl" />
-                  <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl" />
-                  
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div className="p-4 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-6 animate-pulse">
-                      <Sparkles className="w-8 h-8 text-indigo-400" />
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-slate-100 mb-2">
-                      Waking Up Support Engine
-                    </h3>
-                    
-                    <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                      Our backend is hosted on a free instance which automatically spins down after 15 minutes of inactivity. It is currently booting up, which may take about a minute. Thank you for your patience!
-                    </p>
-                    
-                    {/* Progress bar container */}
-                    <div className="w-full bg-[#0B0F19] border border-white/5 rounded-full h-2 mb-2 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 h-full transition-all duration-300 rounded-full"
-                        style={{ width: `${wakeUpProgress}%` }}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-between w-full text-[10px] font-mono text-slate-500">
-                      <span>Booting dependencies...</span>
-                      <span>{wakeUpProgress}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {backendState === 'error' && (
-              <div className="absolute inset-0 bg-[#0B0F19]/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center">
-                <div className="max-w-md w-full bg-[#131B2E] border border-rose-500/20 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
-                  <div className="absolute -top-24 -left-24 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl" />
-                  
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div className="p-4 rounded-full bg-rose-500/10 border border-rose-500/20 mb-6">
-                      <AlertTriangle className="w-8 h-8 text-rose-400 animate-bounce" />
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-rose-300 mb-2">
-                      Connection Timeout
-                    </h3>
-                    
-                    <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                      {wakeUpError || 'The support engine failed to respond. It may be sleeping or undergoing maintenance.'}
-                    </p>
-                    
-                    <button
-                      onClick={() => wakeUpBackend(false)}
-                      className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition duration-150 flex items-center space-x-2 shadow-lg shadow-rose-950/30 animate-pulse"
-                    >
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Retry Connection</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
           {/* PANEL HEADER */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-subtle bg-[#0B0F19]/40 shrink-0">
             <div className="flex items-center space-x-2">
@@ -1067,27 +897,7 @@ export default function App() {
           {/* TERMINAL VIEWER CONTAINER */}
           <div className="flex-1 overflow-y-auto p-6 bg-[#0B0F19]/25 font-mono text-xs space-y-4">
 
-            {backendState === 'waking' ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3 font-mono">
-                <div className="w-8 h-8 rounded-full border-2 border-slate-800 border-t-indigo-500 animate-spin mb-2" />
-                <p className="text-[11px] text-indigo-400">
-                  [SYSTEM] Initializing telemetry stream link...
-                </p>
-                <p className="text-[10px] text-slate-600 text-center max-w-xs leading-relaxed">
-                  FastAPI container is starting on Render. Please wait up to 90 seconds.
-                </p>
-              </div>
-            ) : backendState === 'error' ? (
-              <div className="flex flex-col items-center justify-center h-full text-rose-500 space-y-3 font-mono">
-                <AlertTriangle className="w-8 h-8 text-rose-500 mb-2 animate-pulse" />
-                <p className="text-[11px] text-rose-400 font-bold">
-                  [SYSTEM ERROR] Connection Failed
-                </p>
-                <p className="text-[10px] text-slate-600 text-center max-w-xs leading-relaxed">
-                  The API server failed to respond. Check console logs or retry using the main panel button.
-                </p>
-              </div>
-            ) : logs.length === 0 ? (
+            {logs.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-3">
                 <Terminal className="w-10 h-10 text-slate-800" />
                 <p className="text-center max-w-xs text-xs">
