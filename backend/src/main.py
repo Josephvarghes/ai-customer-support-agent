@@ -140,10 +140,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                     if isinstance(data, dict):
                         # Check if it's a control message to finish the audio streaming
                         msg_type = data.get("type") or data.get("event")
-                        if msg_type == "ping":
-                            await websocket.send_json({"type": "pong"})
-                            continue
-                        elif msg_type == "audio-end":
+                        if msg_type == "audio-end":
                             logger.info(
                                 "Received audio-end control signal from client."
                             )
@@ -207,7 +204,11 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
 
                 # Stream LangGraph events using .astream_events(..., version="v2")
                 config = {"configurable": {"thread_id": client_id}}
-                inputs = {"messages": [HumanMessage(content=user_message)]}
+                inputs = {
+                    "messages": [HumanMessage(content=user_message)],
+                    "policy_checks": {},
+                    "refund_status": None,
+                }
                 agent_response_text = ""
 
                 try:
@@ -342,6 +343,14 @@ async def websocket_chat_endpoint(websocket: WebSocket, client_id: str):
                             agent_response_text = (
                                 "Great news! Your refund request is APPROVED. "
                                 "The credit will be applied to your payment method."
+                            )
+
+                        if agent_response_text.strip():
+                            await websocket.send_json(
+                                {
+                                    "type": "token",
+                                    "content": agent_response_text,
+                                }
                             )
 
                     # Convert response text to speech and send as binary back to client
