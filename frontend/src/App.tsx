@@ -276,9 +276,9 @@ export default function App() {
                 // Check if last message is from agent and has substance.
                 // If it is just a welcome or user message, or agent message is empty, add synthesized one
                 const needsSynthesizedRefusal =
+                  !last ||
                   last.sender === 'user' ||
-                  (last.sender === 'agent' && last.text.trim() === '') ||
-                  !last.text.includes('deny') && !last.text.includes('denied') && !last.text.includes('unfortunately');
+                  (last.sender === 'agent' && last.text.trim() === '');
 
                 if (needsSynthesizedRefusal) {
                   let reasonText = policyReasonRef.current || 'Order details violate the refund timeline, category rules, or membership restrictions.';
@@ -301,6 +301,7 @@ export default function App() {
               setMessages((prev) => {
                 const last = prev[prev.length - 1];
                 const needsSynthesizedApproval =
+                  !last ||
                   last.sender === 'user' ||
                   (last.sender === 'agent' && last.text.trim() === '');
 
